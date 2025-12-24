@@ -70,25 +70,22 @@ contract MerkleAirdrop {
                              VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     /**
-     * @notice
-     * @return
+     * @notice Get Airdrop Token address
      */
     function getAirdropToken() external view returns (address) {
         return address(i_airdropToken);
     }
 
     /**
-     * @notice
-     * @param account
-     * @return
+     * @notice Get claim status for a specific account
+     * @param account address of account to get claim status for
      */
     function getClaimStatus(address account) external view returns (bool) {
         return s_hasClaimed[account];
     }
 
     /**
-     * @notice
-     * @return
+     * @notice Get stored Merkle root
      */
     function getMerkleRoot() external view returns (bytes32) {
         return i_merkleRoot;
