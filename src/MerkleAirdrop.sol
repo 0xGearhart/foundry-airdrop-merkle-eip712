@@ -3,7 +3,7 @@
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-pragma solidity ^0.8.31;
+pragma solidity ^0.8.27;
 
 /**
  * @title MerkleAirdrop
@@ -27,7 +27,7 @@ contract MerkleAirdrop {
     //////////////////////////////////////////////////////////////*/
     IERC20 private immutable i_airdropToken;
     bytes32 private immutable i_merkleRoot;
-    mapping(address claimers => bool) private hasClaimed;
+    mapping(address claimer => bool) private s_hasClaimed;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -56,11 +56,41 @@ contract MerkleAirdrop {
             revert MerkleAirdrop__InvalidMerkleProof();
         }
         // make sure account has not already claimed
-        if (hasClaimed[account]) {
+        if (s_hasClaimed[account]) {
             revert MerkleAirdrop__AlreadyClaimed();
         }
+        // update has claimed mapping
+        s_hasClaimed[account] = true;
         // emit and transfer tokens
         emit Claim(account, amount);
         i_airdropToken.safeTransfer(account, amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                             VIEW FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+    /**
+     * @notice
+     * @return
+     */
+    function getAirdropToken() external view returns (address) {
+        return address(i_airdropToken);
+    }
+
+    /**
+     * @notice
+     * @param account
+     * @return
+     */
+    function getClaimStatus(address account) external view returns (bool) {
+        return s_hasClaimed[account];
+    }
+
+    /**
+     * @notice
+     * @return
+     */
+    function getMerkleRoot() external view returns (bytes32) {
+        return i_merkleRoot;
     }
 }
