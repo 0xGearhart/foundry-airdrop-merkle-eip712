@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: all clean remove install update snapshot coverageReport gasReport anvil deploy airdrop merkle
+.PHONY: all clean remove install update snapshot coverageReport gasReport anvil deploy claimAirdrop merkle
 
 DEFAULT_ANVIL_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
@@ -58,9 +58,9 @@ endif
 deploy:
 	@forge script script/Deploy.s.sol:Deploy $(NETWORK_ARGS)
 
-airdrop:
-	@ forge script script/Interactions.s.sol:Airdrop $(NETWORK_ARGS)
+claimAirdrop:
+	@forge script script/Interactions.s.sol:ClaimAirdrop $(NETWORK_ARGS)
 
 # Generate input in json format with GenerateInput script and save to input.json file then build merkle tree from generated input with MerkleBuilder script and save to output.json file
 merkle:
-	@ forge script script/GenerateInput.s.sol:GenerateInput && forge script script/MerkleBuilder.s.sol:MerkleBuilder
+	@forge script script/GenerateInput.s.sol:GenerateInput && forge script script/MerkleBuilder.s.sol:MerkleBuilder
