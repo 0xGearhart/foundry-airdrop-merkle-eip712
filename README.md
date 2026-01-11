@@ -55,13 +55,13 @@ A gas-efficient airdrop distribution system using Merkle trees to verify claim e
 ### Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Whitelisted Users/EOAs                   │
-└──────────┬──────────────────────────────────┬───────────────┘
-           │                                  │
-           │ Direct claim                     │ Authorize signature
-           │ with signature                   │ (delegate claim)
-           │                                  ▼
+┌──────────────────────────────────────────────────────────┐
+│                  Whitelisted Users/EOAs                  │
+└──────────┬─────────────────────────────┬─────────────────┘
+           │                             │
+           │ Direct claim                │ Authorize signature
+           │ with signature              │ (delegate claim)
+           │                             ▼
            │                    ┌──────────────────────────┐
            │                    │  Authorized Claimer      │
            │                    │  (Non-whitelisted EOA)   │
