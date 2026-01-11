@@ -1,10 +1,10 @@
-# Project Name
+# Merkle Airdrop with EIP-712 Signatures
 
-**⚠️ This is an educational project - not audited, use at your own risk**
+**⚠️ This project is not audited, use at your own risk**
 
 ## Table of Contents
 
-- [Project Name](#project-name)
+- [Merkle Airdrop with EIP-712 Signatures](#merkle-airdrop-with-eip-712-signatures)
   - [Table of Contents](#table-of-contents)
   - [About](#about)
     - [Key Features](#key-features)
@@ -33,64 +33,95 @@
 
 ## About
 
-[1-2 sentence description of what the contract does and its purpose]
+A gas-efficient airdrop distribution system using Merkle trees to verify claim eligibility and EIP-712 typed signatures for secure claim authorization. This implementation allows users to claim pre-allocated airdrop tokens with minimal on-chain verification overhead.
 
 ### Key Features
 
-- Feature 1
-- Feature 2
-- Feature 3
+- **Merkle Tree Verification**: Gas-efficient eligibility verification using Merkle proofs
+- **EIP-712 Signatures**: Typed signature scheme for secure claim authorization
+- **Immutable Token Contract**: Secure ERC20 token for airdrop distribution
+- **Claim Tracking**: Prevents duplicate claims with one-time claim verification per address
+- **Multi-network Support**: Deployable on Ethereum, Arbitrum, and Base networks
 
 **Tech Stack:**
-- Solidity ^0.8.x
-- Foundry
-- [Other dependencies]
+- Solidity ^0.8.27
+- Foundry (Forge for building and testing)
+  - forge-std version (v1.11.0)
+- OpenZeppelin Contracts (ERC20, EIP-712, Merkle proof utilities, ECDSA signature recovery)
+  - openzeppelin-contracts version (v5.5.0)
+- Murky (Merkle tree generation for testing)
+  - murky version (v0.1.0)
 
 ### Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         Users/EOAs                          │
-└──────────────┬──────────────────────────────┬───────────────┘
-               │                              │
-               │ fund()                       │ withdraw()
-               │                              │ (owner only)
-               ▼                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│                                                              │
-│                      Main Contract                           │
-│                                                              │
-│  ┌────────────────┐        ┌──────────────────┐              │
-│  │   Funders      │        │   Funding Goals  │              │
-│  │   Tracking     │        │   & Amounts      │              │
-│  └────────────────┘        └──────────────────┘              │
-│                                                              │
-└───────────────────┬──────────────────────────────────────────┘
-                    │
-                    │ getConversionRate()
-                    │
-                    ▼
-          ┌─────────────────────┐
-          │  Chainlink Oracle   │
-          │   Price Feed        │
-          └─────────────────────┘
+│                    Whitelisted Users/EOAs                   │
+└──────────┬──────────────────────────────────┬───────────────┘
+           │                                  │
+           │ Direct claim                     │ Authorize signature
+           │ with signature                   │ (delegate claim)
+           │                                  ▼
+           │                    ┌──────────────────────────┐
+           │                    │  Authorized Claimer      │
+           │                    │  (Non-whitelisted EOA)   │
+           │                    └────────┬─────────────────┘
+           │                             │
+           │ claim(address,              │ claim(address,
+           │ amount, proof,              │ amount, proof,
+           │ v, r, s)                    │ v, r, s)
+           │                             │
+           └─────────────┬───────────────┘
+                         ▼
+         ┌──────────────────────────────────────────┐
+         │                                          │
+         │         MerkleAirdrop Contract           │
+         │                                          │
+         │ ┌──────────────────┐  ┌────────────────┐ │
+         │ │  Merkle Root     │  │ EIP-712 Domain │ │
+         │ │  (Eligibility)   │  │(Signature Ver) │ │
+         │ └──────────────────┘  └────────────────┘ │
+         │                                          │
+         │ ┌────────────────────────────────────┐   │
+         │ │ Claim Status Tracking (per address)│   │
+         │ │(Prevents duplicate claims)         │   │
+         │ └────────────────────────────────────┘   │
+         │                                          │
+         └───────────────┬──────────────────────────┘
+                         │ safeTransfer()
+                         │
+                         ▼
+            ┌─────────────────────────┐
+            │  AirdropToken (ERC20)   │
+            │  Token Distribution     │
+            └─────────────────────────┘
 ```
 
 **Repository Structure:**
 ```
-project-name/
+foundry-airdrop-merkle-eip712/
 ├── src/
-│   ├── MainContract.sol       # Core contract logic
-│   └── PriceConverter.sol     # Helper library (if applicable)
+│   ├── AirdropToken.sol              # ERC20 token for airdrop
+│   └── MerkleAirdrop.sol             # Core airdrop claim contract with EIP-712
 ├── script/
-│   ├── DeployContract.s.sol   # Deployment script
-│   └── Interactions.s.sol     # Interaction scripts
+│   ├── Deploy.s.sol                  # Deployment script
+│   ├── Interactions.s.sol            # Claim interaction scripts
+│   ├── GenerateInput.s.sol           # Generate merkle tree input data
+│   ├── MerkleBuilder.s.sol           # Build merkle tree from input
+│   ├── HelperConfig.s.sol            # Network configuration
+│   ├── SplitSignature.s.sol          # Split full signature into v,r,s
+│   └── target/                       # Generated merkle tree outputs
 ├── test/
 │   ├── unit/
-│   │   └── ContractTest.t.sol
+│   │   └── MerkleBuilderTest.t.sol   # Merkle tree generation tests
 │   └── integration/
-│       └── InteractionsTest.t.sol
-└── lib/                        # Dependencies
+│       ├── DeployTest.t.sol          # Deployment tests
+│       ├── MerkleAirdropTest.t.sol   # Airdrop claim functionality tests
+│       └── InteractionsTest.t.sol    # Full integration tests
+├── lib/                               # Dependencies
+├── foundry.toml                       # Foundry configuration
+├── Makefile                           # Convenient make targets
+└── README.md                          # This file
 ```
 
 ## Getting Started
@@ -105,8 +136,8 @@ project-name/
 ### Quickstart
 
 ```bash
-git clone https://github.com/yourusername/project-name
-cd project-name
+git clone https://github.com/0xGearhart/foundry-airdrop-merkle-eip712
+cd foundry-airdrop-merkle-eip712
 make install
 forge build
 ```
@@ -120,29 +151,35 @@ forge build
 
 2. **Configure your `.env` file:**
    ```bash
-   SEPOLIA_RPC_URL=your_sepolia_rpc_url_here
-   MAINNET_RPC_URL=your_mainnet_rpc_url_here
+   ETH_SEPOLIA_RPC_URL=your_sepolia_rpc_url_here
+   ETH_MAINNET_RPC_URL=your_mainnet_rpc_url_here
+   ARB_SEPOLIA_RPC_URL=your_arbitrum_sepolia_rpc_url_here
+   ARB_MAINNET_RPC_URL=your_arbitrum_mainnet_rpc_url_here
+   BASE_SEPOLIA_RPC_URL=your_base_sepolia_rpc_url_here
+   BASE_MAINNET_RPC_URL=your_base_mainnet_rpc_url_here
    ETHERSCAN_API_KEY=your_etherscan_api_key_here
    DEFAULT_KEY_ADDRESS=public_address_of_your_encrypted_private_key_here
+   SECONDARY_ADDRESS=secondary_address_for_whitelisting
    ```
 
 3. **Get testnet ETH:**
-   - Sepolia Faucet: [cloud.google.com/application/web3/faucet/ethereum/sepolia](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)
+   - Ethereum Sepolia: [cloud.google.com/application/web3/faucet/ethereum/sepolia](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)
+   - Base Sepolia & Arbitrum Sepolia (requires mainnet Chainlink balance): [faucets.chain.link](https://faucets.chain.link/)
 
 4. **Configure Makefile**
-- Change account name in Makefile to the name of your desired encrypted key 
-  - change "--account defaultKey" to "--account <YOUR_ENCRYPTED_KEY_NAME>"
-  - check encrypted key names stored locally with:
+   - Change account name in Makefile to the name of your desired encrypted key
+   - Change `--account defaultKey` to `--account <YOUR_ENCRYPTED_KEY_NAME>`
+   - Check encrypted key names stored locally with:
 
-```bash
-cast wallet list
-```
-- **If no encrypted keys found**
-  - Encrypt private key to be used securely within foundry:
+   ```bash
+   cast wallet list
+   ```
+   
+   - **If no encrypted keys found**, encrypt private key to be used securely within foundry:
 
-```bash
-cast wallet import <account_name> --interactive
-```
+   ```bash
+   cast wallet import <account_name> --interactive
+   ```
 
 **⚠️ Security Warning:**
 - Never commit your `.env` file
@@ -150,8 +187,6 @@ cast wallet import <account_name> --interactive
 - Use a separate wallet with only testnet funds
 
 ## Usage
-
-[Short description of usage if needed]
 
 ### Build
 
@@ -178,7 +213,7 @@ forge test -vvv
 Run specific test:
 
 ```bash
-forge test --match-test testFunctionName
+forge test --mt testFunctionName
 ```
 
 ### Test Coverage
@@ -205,11 +240,46 @@ make deploy
 
 ### Interact with Contract
 
-[Examples of how to interact with your contract using cast or scripts]
+**Generate Merkle Tree:**
+Build the merkle tree from input data and generate the root:
 
 ```bash
-# Example command
-cast send <CONTRACT_ADDRESS> "functionName()" --rpc-url $SEPOLIA_RPC_URL --account defaultKey
+make merkle
+```
+
+**Get Claim Digest:**
+Get the EIP-712 typed hash digest for signing:
+
+```bash
+make get-digest
+```
+
+**Sign Digest:**
+Sign the digest with your private key:
+
+```bash
+make sign-digest
+```
+
+**Claim Airdrop (Streamlined):**
+Automatically create digest, sign, and claim in one script:
+
+```bash
+make claim-airdrop
+```
+
+**Claim with Full Signature:**
+Use a pre-generated full signature (requires splitting first):
+
+```bash
+make claim-airdrop-with-full-sig
+```
+
+**Split Full Signature:**
+Split a full signature into v, r, and s components:
+
+```bash
+make split-signature
 ```
 
 ## Deployment
@@ -219,13 +289,25 @@ cast send <CONTRACT_ADDRESS> "functionName()" --rpc-url $SEPOLIA_RPC_URL --accou
 Deploy to Sepolia:
 
 ```bash
-make deploy ARGS="--network sepolia"
+make deploy ARGS="--network eth sepolia"
+```
+
+Deploy to Arbitrum Sepolia:
+
+```bash
+make deploy ARGS="--network arb sepolia"
+```
+
+Deploy to Base Sepolia:
+
+```bash
+make deploy ARGS="--network base sepolia"
 ```
 
 Or using forge directly:
 
 ```bash
-forge script script/DeployContract.s.sol:DeployContract --rpc-url $SEPOLIA_RPC_URL --account defaultKey --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY -vvvv
+forge script script/Deploy.s.sol:Deploy --rpc-url $ETH_SEPOLIA_RPC_URL --account defaultKey --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY -vvvv
 ```
 
 ### Verify Contract
@@ -233,15 +315,14 @@ forge script script/DeployContract.s.sol:DeployContract --rpc-url $SEPOLIA_RPC_U
 If automatic verification fails:
 
 ```bash
-forge verify-contract <CONTRACT_ADDRESS> src/MainContract.sol:MainContract --chain-id 11155111 --etherscan-api-key $ETHERSCAN_API_KEY
+forge verify-contract <CONTRACT_ADDRESS> src/MerkleAirdrop.sol:MerkleAirdrop --chain-id 11155111 --etherscan-api-key $ETHERSCAN_API_KEY
 ```
 
 ### Deployment Addresses
 
-| Network | Contract Address | Explorer |
-|---------|------------------|----------|
-| Sepolia | `TBD` | [View on Etherscan](https://sepolia.etherscan.io) |
-| Mainnet | `TBD` | [View on Etherscan](https://etherscan.io) |
+| Network          | MerkleAirdrop Address                        | AirdropToken Address                         | Block                                                                                              |
+| ---------------- | -------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Arbitrum Sepolia | `0x0292d5E5A58a1BE1603a6fAb2D893eb1b6039D6F` | `0x04CD94DE2733Bff4A359c3D595573F479430cac9` | [View on Arbiscan](https://sepolia.arbiscan.io/address/0x0292d5E5A58a1BE1603a6fAb2D893eb1b6039D6F) |
 
 ## Security
 
@@ -256,47 +337,58 @@ For production use, consider:
 
 ### Access Control (Roles & Permissions)
 
-[Examples from previous project to be replaced by actual project layout in brackets below. Remove section if no roles or ownership used]
+This protocol does **not** implement role-based access control through OpenZeppelin's `AccessControl`. The contracts follow a **stateless, permissionless design**:
 
-[The protocol implements OpenZeppelin's `AccessControl` and `Ownable` for fine-grained permission management:]
+**MerkleAirdrop Contract:**
+- **No Owner**: The contract is deployed without an owner. Once deployed, it operates autonomously with no administrative functions.
+- **Permissionless Claims**: Any address with a valid Merkle proof and corresponding EIP-712 signature can claim their airdrop.
+- **One-Time Claims Per Address**: Uses `s_hasClaimed` mapping to prevent duplicate claims, but does not restrict who can call the function.
 
-**Roles:** [Remove if roles are not used]
-- [**`MINT_AND_BURN_ROLE`**: Critical role for minting and burning RBT tokens
-  - Granted to `Vault` contract (for deposit/withdrawal operations)
-  - Granted to `RebaseTokenPool` contract (for cross-chain operations)
-  - Only the owner can grant this role]
+**AirdropToken Contract:**
+- **Initial Minter**: The deployer of the contract receives the initial token supply upon deployment.
+- **Standard ERC20**: No special roles; functions follow standard ERC20 behavior (transfer, approve, etc.).
+- **Tokens Transferred to MerkleAirdrop**: All airdrop tokens are transferred to the `MerkleAirdrop` contract during deployment for distribution.
 
-**Owner Permissions:**  [Remove if owner is not used]
-- [`setInterestRate()`: Decrease the global interest rate (can only decrease, never increase)]
-- [`grantMintAndBurnRole()`: Grant minting/burning permissions to authorized contracts]
+**Key Security Properties:**
+- ✅ **Immutable Parameters**: Merkle root and token address are immutable once set
+- ✅ **EIP-712 Compliance**: Signature verification uses standardized typed data hashing
+- ✅ **Gas Optimization**: Merkle proofs minimize on-chain computation
+- ⚠️ **No Recovery**: Once tokens are in the `MerkleAirdrop` contract, unclaimed tokens cannot be withdrawn (by design)
+- ⚠️ **Whitelist Immutability**: The Merkle root (whitelist) cannot be updated after deployment
 
-**Access Control Vulnerabilities & Mitigations:** 
-- [⚠️ **Risk**: Owner could grant `MINT_AND_BURN_ROLE` to malicious actor
-  - **Mitigation**: Use multi-sig wallet for owner role in production]
-- [⚠️ **Risk**: Owner control of interest rate changes
-  - **Mitigation**: Decentralize rate changes through governance in production]
+**Centralization Risks:**
+- **Whitelist Generation**: The Merkle tree whitelist is generated off-chain. A malicious whitelist could be deployed, but users can verify their own eligibility before claiming.
+- **Signature Verification**: Claims require valid EIP-712 signatures. If the signer's private key is compromised, unauthorized claims are possible for addresses in the Merkle proof.
+
+**Dependencies:**
+- **OpenZeppelin Contracts**: Uses audited libraries for ERC20, EIP-712, ECDSA, and Merkle proof verification
+- **Murky**: External library for Merkle tree generation in tests
 
 ### Known Limitations
 
-- [Limitation 1 - e.g., centralized owner control]
-- [Limitation 2 - e.g., no withdrawal limits]
-- [Limitation 3 - e.g., relies on external oracle]
-
-**Centralization Risks:**
-- [Explain any admin/owner privileges]
-
-**Oracle Dependencies:**
-- [Explain reliance on Chainlink or other oracles]
+- **Merkle Root Immutability**: Cannot update the whitelist after deployment. A new contract must be deployed to change eligible addresses.
+- **No Batch Claims**: Users can claim their own airdrop, or on behalf of others with their signature.
+- **Merkle Leaf Hashing**: Current implementation uses `keccak256(bytes.concat(keccak256(abi.encode(account, amount))))` which is less gas-efficient than assembly-based methods. Consider using Solady's `EfficientHashLib` for production.
+- **No Claim Deadline**: Users can claim their airdrop at any time after deployment. Consider adding a deadline in production environments.
 
 ## Gas Optimization
 
-| Function | Gas Cost |
-|----------|----------|
-| `function1` | ~XXX,XXX |
-| `function2` | ~XXX,XXX |
-| `function3` | ~XXX,XXX |
+| Function           | Description                     | Optimizations                                                                                    |
+| ------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `claim()`          | Main airdrop claim function     | Uses Merkle proofs (log n verification), EIP-712 signature verification, one-time claim tracking |
+| `getDigest()`      | Returns EIP-712 typed data hash | Lazy evaluation, no storage reads                                                                |
+| `getClaimStatus()` | Check if address has claimed    | Single storage read                                                                              |
 
-Generate gas report:
+**Key Gas Optimizations Implemented:**
+- **Merkle Trees**: Instead of storing all eligible addresses (O(n) storage), uses Merkle root (O(1) storage) with O(log n) verification
+- **Immutable Variables**: Token and Merkle root use `immutable` keyword, reducing SSTOREs and optimizing reads
+- **SafeERC20**: Uses OpenZeppelin's `SafeERC20` for safe transfers with minimal overhead
+- **No Loop-Based Operations**: Merkle proof verification is non-iterative
+- **Single Storage Slot for Claims**: `s_hasClaimed` mapping efficiently tracks claimed status
+
+**Gas Report:**
+
+Generate a gas report for this project:
 
 ```bash
 forge test --gas-report
